@@ -1,0 +1,117 @@
+{% extends 'templates/web.html' %}
+{% block content %}
+<div class="container">
+    {% if frappe.session.user %}
+    <h1>Courses</h1>
+    <ul class="course-list">
+        {% for course in courses %}
+        <li class="course-item">
+            {% if course.image %}
+            <div class="image-wrapper">
+                <img src="{{ course.image }}" alt="{{ course.title }}">
+            </div>
+            {% endif %}
+            <div class="course-info">
+                <h3>{{ course.title }}</h3>
+                {% if course.description %}
+                <p><button class="pay-now-button" onclick="initiatePayment('{{ course.name }}', '{{ user }}')">Pay Now</button>
+                </p>
+                {% else %}
+                <p>No description available.</p>
+                {% endif %}
+                <!-- Check if the user is logged in before showing the "Pay Now" button -->
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Please log in to view the list of courses.</p>
+    {% endif %}
+</div>
+
+<style>
+    /* Add custom CSS styles for the course list layout */
+    .pay-now-button {
+        border-radius: 5px; /* Set the border radius to create rounded corners */
+        background-color: #236cb9; /* Use the blue color (#007bff) */
+        color: #fff; /* Set the text color to white */
+        padding: 5px 10px; /* Adjust padding to your preference */
+        font-size: 16px;
+        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; /* Set the font size for the button text */
+        border: none; /* Remove the default button border */
+        cursor: pointer; /* Set the cursor to indicate interactivity */
+    }
+
+    /* Add this style to change the button color when hovered */
+    .pay-now-button:hover {
+        background-color: #173e55; /* A darker shade of blue (#0056b3) when hovered */
+    }
+    .course-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .course-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .image-wrapper {
+        margin-right: 20px;
+    }
+
+    .image-wrapper img {
+        max-width: 100px;
+        max-height: 100px;
+    }
+
+    .course-info {
+        flex: 1;
+    }
+
+    .course-info h3 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .course-info p {
+        margin: 5px 0;
+        font-size: 16px;
+    }
+
+    .course-info button {
+        margin-top: 10px;
+    }
+</style>
+
+<script>
+    function initiatePayment(courseTitle, userEmail) {
+        // Make sure userEmail is not empty before proceeding
+        console.log(courseTitle);
+        console.log(userEmail);
+
+        if (!userEmail) {
+            alert('User email not found in the session. Please log in.');
+            return;
+        }
+
+        // Make an API request to your back-end to initiate the payment
+        frappe.call({
+            method: 'paystack.api.initialize_transaction',
+            args: {
+                courseId: courseTitle, // Pass courseTitle as 'courseId' argument
+                userEmail: userEmail // Pass userEmail as 'userEmail' argument
+            },
+            callback: function(response) {
+                if (response.message.status == true) {
+                    // Redirect the user to Paystack to complete the payment
+                    window.location.href = response.message.data.authorization_url;
+                } else {
+                    alert('Error initiating payment: ' + response.message);
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
